@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: micro-web
+  namespace: default
+  labels:
+    name: micro-web
+    micro: runtime
+spec:
+  ports:
+  - name: https
+    port: 8082
+    targetPort: 8082
+  selector:
+    name: micro-web
+    micro: runtime
+  type: LoadBalancer
+# --------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  name: micro-web
+  labels:
+    micro: runtime
+    name: micro-web
+  annotations:
+    name: "go.micro.web"
+    version: "latest"
+    source: "github.com/micro/micro"
+    owner: "micro"
+    group: "micro"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: micro-web
+      micro: runtime
+  template:
+    metadata:
+      labels:
+        name: micro-web
+        micro: runtime
+    spec:
+      containers:
+      - name: web
+        env:
+        - name: MICRO_BROKER
+          value: "nats"
+        - name: MICRO_BROKER_ADDRESS
+          value: "nats-cluster"
+        - name: MICRO_ENABLE_STATS
+          value: "true"
+        - name: MICRO_REGISTRY
+          value: "etcd"
+        - name: MICRO_REGISTRY_ADDRESS
+          value: "etcd-cluster-client"
+        # - name: MICRO_ENABLE_ACME
+        #   value: "true"
+        # - name: MICRO_ACME_PROVIDER
+        #   value: certmagic
+        args:
+        - web
+        image: micro/micro
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8082
+          name: web-port
